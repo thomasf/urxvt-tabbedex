@@ -424,11 +424,24 @@ sub on_start {
 
    $self->cmd_parse ("\033[?25l");
 
-   my @argv = $self->argv;
-
-   do {
-      shift @argv;
-   } while @argv && $argv[0] ne "-e";
+   # JD: don't throw away all arguments, as original code did.
+   # Instead, let most of them through.
+   # Q: What shouldn't we pass through aside from "-pe <extensions>"?
+   my @argv = ();
+   my @tmp = $self->argv;
+   shift @tmp;		# toss away argv[0] (== "urxvt" or similar).
+   while (@tmp != ()) {
+       if ($tmp[0] eq "-pe") {
+           shift @tmp;	# toss away -pe, we later toss its arg.
+       } elsif ($tmp[0] eq "-geometry") {
+           shift @tmp;
+           $self->{initial_geometry} = $tmp[0];
+       } else {
+           push(@argv, $tmp[0]);
+       }
+       shift @tmp;
+   }
+   $self->{argv} = [ @argv ];
 
    if ($self->{tab_title}) {
       $self->{tab_title} = $self->{term}->XInternAtom("_NET_WM_NAME", 1);
